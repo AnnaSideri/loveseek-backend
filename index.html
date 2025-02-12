@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveSeek Chat</title>
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+</head>
+<body>
+    <h1>Live Chat</h1>
+    <div id="chat"></div>
+    <script>
+        // Koble til Pusher
+        const pusher = new Pusher("36e4910322c70c1cc882", {
+            cluster: "eu"
+        });
+
+        // Abonner på kanalen og eventet
+        const channel = pusher.subscribe("chat_channel");
+        channel.bind("new_message", function(data) {
+            const chatDiv = document.getElementById("chat");
+            chatDiv.innerHTML += `<p><strong>${data.username}:</strong> ${data.message}</p>`;
+        });
+    </script>
+</body>
+</html>
