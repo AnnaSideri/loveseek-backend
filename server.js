@@ -4,6 +4,14 @@ const Pusher = require('pusher');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
+const path = require('path');
+
+// Sikrer at ADC-variabelen er satt riktig
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (!credentialsPath) {
+    console.error("❌ Feil: GOOGLE_APPLICATION_CREDENTIALS er ikke satt.");
+    process.exit(1);
+}
 
 // Bruk ADC i stedet for en privat nøkkel
 admin.initializeApp({
@@ -18,37 +26,41 @@ app.use(express.json());
 
 // Konfigurer Pusher
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-  useTLS: true
+    appId: process.env.PUSHER_APP_ID,
+    key: process.env.PUSHER_KEY,
+    secret: process.env.PUSHER_SECRET,
+    cluster: process.env.PUSHER_CLUSTER,
+    useTLS: true
 });
 
 // Endepunkt for å sende meldinger
 app.post('/send-message', async (req, res) => {
-  try {
-    const { username, message } = req.body;
-    const timestamp = new Date();
+    try {
+        const { username, message } = req.body;
+        if (!username || !message) {
+            return res.status(400).json({ success: false, error: "Mangler 'username' eller 'message' i forespørselen." });
+        }
 
-    // Lagre meldingen i Firestore
-    await db.collection('messages').add({
-      username,
-      message,
-      timestamp
-    });
+        const timestamp = new Date();
 
-    // Send melding via Pusher
-    pusher.trigger('chat_channel', 'new_message', {
-      username,
-      message
-    });
+        // Lagre meldingen i Firestore
+        await db.collection('messages').add({
+            username,
+            message,
+            timestamp
+        });
 
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Feil ved sending av melding:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+        // Send melding via Pusher
+        pusher.trigger('chat_channel', 'new_message', {
+            username,
+            message
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Feil ved sending av melding:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // Start server
