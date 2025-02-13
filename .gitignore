@@ -1,1 +1,4 @@
 node_modules
+# Ignorer sensitive filer
+loveseek-backend-123-450807-f998448f.json
+.env
